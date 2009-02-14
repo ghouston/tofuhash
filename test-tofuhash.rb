@@ -111,13 +111,13 @@ module TofuHashTesting
       assert_equal(2, x[1])
 
       assert(begin
-           for k,v in y
-             raise if k*2 != v
-           end
-           true
-         rescue
-           false
-         end)
+          for k,v in y
+            raise if k*2 != v
+          end
+          true
+        rescue
+          false
+        end)
 
       assert_equal(3, x.length)
       assert(x.has_key?(1))
@@ -176,33 +176,33 @@ module TofuHashTesting
       assert_equal(0, $z)
     end
 
-       class MyClass
-         attr_reader :str
-         def initialize(str)
-           @str = str
-         end
-         def eql?(o)
-           o.is_a?(MyClass) && str == o.str
-         end
-         def hash
-           @str.hash
-         end
-       end
+    class MyClass
+      attr_reader :str
+      def initialize(str)
+        @str = str
+      end
+      def eql?(o)
+        o.is_a?(MyClass) && str == o.str
+      end
+      def hash
+        @str.hash
+      end
+    end
 
     def test_ri_hash_code
-       a = MyClass.new("some string")
-       b = MyClass.new("some string")
-       assert( a.eql?( b ) )  #=> true
+      a = MyClass.new("some string")
+      b = MyClass.new("some string")
+      assert( a.eql?( b ) )  #=> true
 
-       h = TofuHash.new #was: h={}
+      h = TofuHash.new #was: h={}
 
-       h[a] = 1
-       assert_equal( h[a],1 )      #=> 1
-       assert_equal( h[b],1 )      #=> 1
+      h[a] = 1
+      assert_equal( h[a],1 )      #=> 1
+      assert_equal( h[b],1 )      #=> 1
 
-       h[b] = 2
-       assert_equal( h[a],2 )      #=> 2
-       assert_equal( h[b],2 )      #=> 2
+      h[b] = 2
+      assert_equal( h[a],2 )      #=> 2
+      assert_equal( h[b],2 )      #=> 2
     end
 
     def test_ri_hash_new_code
@@ -227,6 +227,28 @@ module TofuHashTesting
     def test_ri_hash_square_bracket_code
       assert_equal( TofuHash["a", 100, "b", 200], {"a"=>100, "b"=>200} )       #=> {"a"=>100, "b"=>200}
       assert_equal( TofuHash["a" => 100, "b" => 200], {"a"=>100, "b"=>200} )    #=> {"a"=>100, "b"=>200}
+    end
+
+    def test_to_array
+      hash = TofuHash["a" => 2, "b" => 1]
+      assert_equal [["a",2],["b",1]], hash.to_a
+    end
+
+    def test_include_key
+      hash =  TofuHash["a" => 2, "b" => 1]
+      assert hash.include? 'a'
+    end
+
+    def test_delete_if
+      hash =  TofuHash["a" => 2, "b" => 1]
+      hash.delete_if { |k,v| k == 'b' }
+      assert_equal TofuHash['a' => 2], hash
+    end
+
+    def test_delete_unless
+      hash =  TofuHash["a" => 2, "b" => 1]
+      hash.delete_unless { |k,v| k == 'b' }
+      assert_equal TofuHash['b' => 1], hash
     end
 
     def test_ri_hash_equality

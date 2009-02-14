@@ -103,10 +103,10 @@ end
 class TofuHash < Hash
   def initialize ( default = nil )
     if block_given?
-      if default != nil
-        raise ArgumentError, "wrong number of arguments"
+      if default
+        raise ArgumentError, "Can't initialize Hash with both a default value and a block"
       end
-      super() { |h,k| yield h, decode(k) }
+      super() { |hash,key| yield(hash, decode(key)) }
     else
       super
     end
@@ -172,6 +172,31 @@ class TofuHash < Hash
     args.each { |key| values << self[key] }
     values
   end
+
+    def to_a
+    aux = []
+    self.each do |key,value|
+      aux << [ key, value ]
+    end
+    aux
+  end
+
+  def include?(key)
+    super(encode(key))
+  end
+
+    alias :regular_delete_if :delete_if
+
+  def delete_if(&block)
+    self.regular_delete_if do |key, value|
+      block.call( decode(key), value)
+    end
+  end
+
+  def delete_unless #:yield:
+    delete_if{ |key, value| ! yield(key, value) }
+  end
+
 end # class TofuHash
 
 if __FILE__ == $0
