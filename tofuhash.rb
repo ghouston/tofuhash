@@ -4,7 +4,7 @@ TofuHash http://github.com/ghouston/tofuhash/tree/master
 
 by Greg Houston http://ghouston.blogspot.com/
 
-Version: 0.0.1
+Version: 0.0.2
 
 A varient of Hash which can change the lookup behavior of keys.  
 The default TofuHash will match Symbol and String without reguard
@@ -52,6 +52,14 @@ shall not be used in advertising or otherwise to promote the sale, use or other
 dealings in this Software without prior written authorization.
 
 Release History:
+
+Feb 15 2009 - 0.0.2 released on git hub.  Merged in pull request from 
+http://github.com/nachocab/tofuhash/tree/master [Thanks nachocab!]
+nachocab added to_a, delete_if, delete_unless, include? methods.  nachocab also
+updated the exception raised when TofuHash#initialize is called with both
+a default value and default block.  It now raises "wrong number of arguments"
+which matches the behavior of Hash. I (ghouston) tweaked the test cases to match
+the examples from Hash's ri documentation.
 
 Dec 12 2008 - 0.0.1 released on git hub.  Working solution, only more complete
 testing is needed.  Know issues: a) Hash doesn't know how to compare with TofuHash.

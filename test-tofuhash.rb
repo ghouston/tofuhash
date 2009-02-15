@@ -1,5 +1,6 @@
 require 'tofuhash'
 require 'test/unit'
+require 'pp'
 
 =begin
 test-tofuhash.rb
@@ -229,20 +230,33 @@ module TofuHashTesting
       assert_equal( TofuHash["a" => 100, "b" => 200], {"a"=>100, "b"=>200} )    #=> {"a"=>100, "b"=>200}
     end
 
-    def test_to_array
+    def test_to_a
       hash = TofuHash["a" => 2, "b" => 1]
       assert_equal [["a",2],["b",1]], hash.to_a
     end
 
-    def test_include_key
+    def test_ri_to_a
+      h = { "c" => 300, "a" => 100, "d" => 400, "c" => 300  }
+      result = h.to_a
+      sorted = h.to_a.sort { |a,b| a[0] <=> b[0] }
+      assert_equal( [['a',100],['c',300],['d',400]], sorted )
+    end
+    
+    def test_include?
       hash =  TofuHash["a" => 2, "b" => 1]
-      assert hash.include? 'a'
+      assert( hash.include?( 'a' ))
+    end
+    
+    def test_ri_include?
+      h = { "a" => 100, "b" => 200 }
+      assert( h.has_key?("a") )
+      assert_equal( false, h.has_key?("z"))
     end
 
-    def test_delete_if
-      hash =  TofuHash["a" => 2, "b" => 1]
-      hash.delete_if { |k,v| k == 'b' }
-      assert_equal TofuHash['a' => 2], hash
+    def test_ri_delete_if
+      h =  TofuHash["a" => 100, "b" => 200,  "c" => 300]
+      h.delete_if { |key,value| key >= 'b' }
+      assert_equal TofuHash['a' => 100], h
     end
 
     def test_delete_unless
