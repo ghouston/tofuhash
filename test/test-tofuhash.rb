@@ -268,18 +268,14 @@ module TofuHashTesting
     def test_ri_hash_equality
 =begin
     TODO: KNOWN ISSUE, Hash doesn't know how to compare to TofuHash.
-
+=end
     h1 = TofuHash[ "a" => 1, "c" => 2 ]
     h2 = { 7 => 35, "c" => 2, "a" => 1 }
     h3 = TofuHash[ "a" => 1, "c" => 2, 7 => 35 ]
     h4 = TofuHash[ "a" => 1, "d" => 2, "f" => 35 ]
-    puts "h1"
     assert_equal( h1 == h2, false )   #=> false
-    puts "h2"
-    assert_equal( h2 == h3, true )   #=>
-    puts "h3"
+#    assert_equal( h2 == h3, true )   #=> see issue
     assert_equal( h3 == h4, false )   #=> false
-=end
     end
   end # class TestHash
 end # module TofuHash
