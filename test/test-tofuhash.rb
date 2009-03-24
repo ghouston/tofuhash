@@ -269,13 +269,49 @@ module TofuHashTesting
 =begin
     TODO: KNOWN ISSUE, Hash doesn't know how to compare to TofuHash.
 =end
-    h1 = TofuHash[ "a" => 1, "c" => 2 ]
-    h2 = { 7 => 35, "c" => 2, "a" => 1 }
-    h3 = TofuHash[ "a" => 1, "c" => 2, 7 => 35 ]
-    h4 = TofuHash[ "a" => 1, "d" => 2, "f" => 35 ]
-    assert_equal( h1 == h2, false )   #=> false
-#    assert_equal( h2 == h3, true )   #=> see issue
-    assert_equal( h3 == h4, false )   #=> false
+      h1 = TofuHash[ "a" => 1, "c" => 2 ]
+      h2 = { 7 => 35, "c" => 2, "a" => 1 }
+      h3 = TofuHash[ "a" => 1, "c" => 2, 7 => 35 ]
+      h4 = TofuHash[ "a" => 1, "d" => 2, "f" => 35 ]
+      assert_equal( h1 == h2, false )   #=> false
+#    assert_equal( h2 == h3, true )   #=> true; however see issue
+      assert_equal( h3 == h4, false )   #=> false
+    end
+    
+    def test_ri_element_reference
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert_equal( h["a"], 100 )
+      assert_equal( h["b"], 200 )
+      
+      # case-insensitive access...
+      assert_equal( h["A"], 100 )
+      assert_equal( h["B"], 200 )
+
+      # indifferent access...
+      assert_equal( h[:a], 100 )
+      assert_equal( h[:b], 200 )
+      
+      # both
+      assert_equal( h[:A], 100 )
+      assert_equal( h[:B], 200 )
+    end
+    
+    def test_ri_element_assignment
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h["a"] = 9
+      h["c"] = 4
+      
+      # tofu examples...
+      h["D"] = 5
+      h[:e] = 6
+      h[:F] = 7
+      assert_equal( h, {"a"=>9, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
+    end
+    
+    def test_ri_clear
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.clear
+      assert_equal( h, {} )
     end
   end # class TestHash
 end # module TofuHash
