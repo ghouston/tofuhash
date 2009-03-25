@@ -162,10 +162,12 @@ class TofuHash < Hash
     delete_if{ |key, value| ! yield(key, value) }
   end
 
+  # see Hash#default
   def default(key = nil)
     super
   end
   
+  # see Hash#delete
   def delete(key, &block)
     if block_given? then
       super(encode(key)) {|e| yield e.decode }
