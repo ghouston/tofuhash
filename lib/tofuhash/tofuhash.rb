@@ -51,7 +51,13 @@ class TofuHash < Hash
       if default
         raise ArgumentError, "Can't initialize Hash with both a default value and a block"
       end
-      super() { |hash,key| yield(hash, decode(key)) }
+      super() do |hash,key| 
+        if key.is_a? TofuKey then 
+          yield(hash, decode(key))
+        else
+          yield(hash, key)
+        end
+      end
     else
       super
     end
@@ -156,4 +162,15 @@ class TofuHash < Hash
     delete_if{ |key, value| ! yield(key, value) }
   end
 
+  def default(key = nil)
+    super
+  end
+  
+  def delete(key, &block)
+    if block_given? then
+      super(encode(key)) {|e| yield e.decode }
+    else
+      super(encode(key))
+    end
+  end
 end # class TofuHash

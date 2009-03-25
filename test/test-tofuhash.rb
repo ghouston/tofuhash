@@ -313,5 +313,49 @@ module TofuHashTesting
       h.clear
       assert_equal( h, {} )
     end
+    
+    def test_ri_default_access
+      h = TofuHash.new
+      assert_nil( h.default )
+      assert_nil( h.default(2) )
+      
+      h = TofuHash.new("cat")
+      assert_equal( h.default, "cat" )
+      assert_equal( h.default(2), "cat" )
+
+      h = TofuHash.new {|hash,key| hash[key] = key.to_i*10}
+      assert_equal( h.default, 0 )
+      assert_equal( h.default(2), 20 )
+    end
+    
+    def test_ri_default_assignment
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.default = "Go fish"
+      assert_equal( 100, h["a"] )
+      assert_equal( "Go fish", h["z"] )
+      h.default = proc do |hash, key|
+        hash[key] = key + key
+      end
+      assert( h[2].is_a?( Proc ))
+      assert( h["cat"].is_a?( Proc ))
+      assert_same( h[2], h["cat"] )
+    end
+    
+    def test_ri_default_proc
+      h = TofuHash.new {|h,k| h[k] = k*k }
+      p = h.default_proc
+      assert( p.is_a?( Proc ))
+      a = []
+      p.call( a, 2 )
+      assert_equal( [nil, nil, 4], a )
+    end
+
+    def test_ri_delete
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert_equal( h.delete("a"), 100 )
+      assert_equal( h.delete("z"), nil )
+      assert_equal( h.delete("z") { |el| "#{el} not found" }, "z not found" )
+      assert_equal( h, { "b" => 200 } )
+    end
   end # class TestHash
 end # module TofuHash
