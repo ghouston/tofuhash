@@ -20,6 +20,12 @@ test-tofuhash.rb (this file) is released under the Ruby License since it
 contains source code based on Ruby's released source.
 =end
 
+#
+# Note, when asserting a Hash vs a TofuHash; the TofuHash must appear as the
+# left argument.  This is because Hash doesn't know how to compare to a TofuHash
+# in this release.
+#
+
 module TofuHashTesting
   class Test_TofuHash < Test::Unit::TestCase
     def test_new
@@ -302,10 +308,26 @@ module TofuHashTesting
       h["c"] = 4
       
       # tofu examples...
+      h[:a] = 10
       h["D"] = 5
       h[:e] = 6
       h[:F] = 7
-      assert_equal( h, {"a"=>9, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
+      assert_equal( h, {"a"=>10, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
+      assert_equal( h, {:a=>10, "b"=>200, "c"=>4, "D"=>5, :e=>6, :F=>7} )
+    end
+    
+    def test_ri_store
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.store("a",9)
+      h.store("c",4)
+      
+      # tofu examples...
+      h.store(:a,10)
+      h.store("D",5)
+      h.store(:e,6)
+      h.store(:F,7)
+      assert_equal( h, {"a"=>10, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
+      assert_equal( h, {:a=>10, "b"=>200, "c"=>4, "D"=>5, :e=>6, :F=>7} )
     end
     
     def test_ri_clear
@@ -356,6 +378,150 @@ module TofuHashTesting
       assert_equal( h.delete("z"), nil )
       assert_equal( h.delete("z") { |el| "#{el} not found" }, "z not found" )
       assert_equal( h, { "b" => 200 } )
+    end
+
+    def test_ri_each
+      results = []
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.each {|key, value| results << "#{key} is #{value}" }
+      assert_equal( ["a is 100", "b is 200"], results) 
+    end
+    
+    def test_ri_each_key
+      results = []
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.each_key {|key| results << key }
+      assert_equal( ["a", "b"], results) 
+    end
+    
+    def test_ri_each_pair
+      results = []
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.each_pair {|key, value| results << "#{key} is #{value}" }
+      assert_equal( ["a is 100", "b is 200"], results) 
+    end
+    
+    def test_ri_each_value
+      results = []
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.each_value {|value| results << value }
+      assert_equal( [100,200], results) 
+    end
+    
+    def test_ri_empty?
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( !h.empty? )
+      h = TofuHash[]
+      assert( h.empty? )
+    end
+    
+    def test_ri_fetch
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert_equal( 100, h.fetch("a"))
+      assert_equal( "go fish", h.fetch("z", "go fish"))
+      assert_equal( "go fish, z", h.fetch("z") { |el| "go fish, #{el}"})
+      # supress expected warning message from clutter test output
+      old_VERBOSE = $VERBOSE
+      $VERBOSE = nil
+      #note, this will generate a warning "block supersedes default value argument"
+      assert_equal( "go fish, z", h.fetch("z", 99) { |el| "go fish, #{el}"})
+      $VERBOSE = old_VERBOSE
+      assert_raise IndexError do
+        h.fetch("z")
+      end
+    end
+    
+    def test_ri_has_key
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.has_key?( "a" ) )
+      assert( h.has_key?( :a ) )
+      assert( h.has_key?( "A" ) )
+      assert( h.has_key?( :A ) )
+      assert( !h.has_key?( "z" ) )
+    end
+    
+    def test_ri_include
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.include?( "a" ) )
+      assert( h.include?( :a ) )
+      assert( h.include?( "A" ) )
+      assert( h.include?( :A ) )
+      assert( !h.include?( "z" ) )
+    end
+
+    def test_ri_key_question
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.key?( "a" ) )
+      assert( h.key?( :a ) )
+      assert( h.key?( "A" ) )
+      assert( h.key?( :A ) )
+      assert( !h.key?( "z" ) )
+    end
+    
+    def test_ri_member_question
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.member?( "a" ) )
+      assert( h.member?( :a ) )
+      assert( h.member?( "A" ) )
+      assert( h.member?( :A ) )
+      assert( !h.member?( "z" ) )
+    end
+    
+    def test_ri_has_value
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.has_value?( 100 ))
+      assert( !h.has_value?( 999 ))
+    end
+
+    def test_ri_value_question
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert( h.value?( 100 ))
+      assert( !h.value?( 999 ))
+    end
+    
+    def test_ri_index
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      assert_equal( "b", h.index( 200 ))
+      assert_equal( nil, h.index( 999 ))
+    end
+    
+    def test_ri_replace
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h2 = {"c" => 300, "d" => 400 }
+      h.replace( h2 )
+      assert_equal( h, h2 )
+      h2["c"] = 999
+      assert_equal( 300, h["c"] )
+      h.each_key_encoded do |key|
+        assert_instance_of( TofuKey, key )
+      end
+    end
+    
+    def test_ri_select
+      h = TofuHash[ "a" => 100, "b" => 200, "c" => 300 ]
+      assert( [["b", 200], ["c", 300]], h.select {|k,v| k > "a"} )
+      assert( [["a", 100]], h.select {|k,v| v < 200} )
+    end
+    
+    def test_ri_shift
+      h = TofuHash[ 1 => "a", 2 => "b", 3 => "c" ]
+      assert_equal( [1,"a"], h.shift )
+      assert_equal( h, {2 => "b", 3 => "c"} )
+    end
+    
+    def test_ri_length_and_size
+      h = TofuHash[ "d" => 100, "a" => 200, "v" => 300, "e" => 400 ]
+      assert_equal( 4, h.length )
+      assert_equal( 4, h.size )
+      assert_equal( 200, h.delete("a") )
+      assert_equal( 3, h.length )
+      assert_equal( 3, h.size )
+    end
+
+    def test_ri_sort
+      h = TofuHash[ "a" => 20, "b" => 30, "c" => 10  ]
+      assert_equal( [["a", 20], ["b", 30], ["c", 10]], h.sort )
+      assert_equal( [["c", 10], ["a", 20], ["b", 30]], h.sort {|a,b| a[1]<=>b[1]} )
     end
   end # class TestHash
 end # module TofuHash

@@ -87,4 +87,20 @@ class TofuKey
       @coded_key.eql?( obj )
     end
   end
+  
+  def == obj
+    self.eql? obj
+  end
+  
+  def <=> obj
+    if obj.instance_of? Symbol
+      @coded_key <=> obj.to_s.downcase
+    elsif obj.instance_of? TofuKey
+      @coded_key <=> obj.coded_key
+    elsif obj.respond_to? :downcase
+      @coded_key <=> obj.downcase
+    else
+      @coded_key <=> obj
+    end
+  end
 end

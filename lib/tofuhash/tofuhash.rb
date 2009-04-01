@@ -95,15 +95,36 @@ class TofuHash < Hash
     super( encode(key), value )
   end
 
-  alias :regular_each :each unless method_defined?(:regular_each)
+  alias :regular_each_pair :each_pair unless method_defined?(:regular_each_pair)
 
   # see Hash#each
   def each &block
-    self.regular_each do |key, value|
-      block.call( decode(key), value )
+    self.regular_each_pair do |key, value|
+      block.call( [decode(key), value] )
     end
   end
 
+  # see Hash#each_key
+  def each_key &block
+    self.regular_each_pair do |key, value|
+      block.call(decode(key))
+    end
+  end
+  
+  # executes the block on each key as it is stored with TofuHash (e.g. the TofuKey)
+  def each_key_encoded
+    self.regular_each_pair do |key, value|
+      yield key
+    end
+  end
+  
+  # see Hash#each_pair
+  def each_pair &block
+    self.regular_each_pair do |key,value|
+      block.call( decode(key), value )
+    end
+  end
+  
   # see Hash#store
   def store key, value
     super( encode(key), value )
@@ -115,10 +136,14 @@ class TofuHash < Hash
   end
 
   # see Hash#has_key?
+  # also aliased as include?, key?, and member?
   def has_key? key
     super( encode(key) )
   end
-
+  alias_method 'include?', 'has_key?'
+  alias_method 'key?', 'has_key?'
+  alias_method 'member?', 'has_key?'
+  
   # see Hash#keys
   def keys
     # collect will call each which decodes the key
@@ -141,11 +166,6 @@ class TofuHash < Hash
       aux << [ key, value ]
     end
     aux
-  end
-
-  # see Hash#include?
-  def include?(key)
-    super(encode(key))
   end
 
   alias :regular_delete_if :delete_if
@@ -174,5 +194,77 @@ class TofuHash < Hash
     else
       super(encode(key))
     end
+  end
+  
+  alias :regular_fetch :fetch
+  class Missing; end # used to mark a missing argument
+
+  # see Hash#fetch
+  def fetch( key, default = Missing )
+    if block_given? then
+      if default == Missing then
+        super(encode(key)) {|e| yield e.decode }
+      else
+        super(encode(key),default) {|e| yield e.decode }
+      end
+    else
+      if default == Missing then
+        super(encode(key))
+      else
+        super(encode(key),default)
+      end
+    end
+  end
+  
+  # see Hash#index
+  def index( value )
+    result = super
+    return decode(result) if result.is_a? TofuKey
+    return result
+  end
+  
+  # see Hash#replace
+  def replace( other_hash )
+    self.clear
+    other_hash.each_pair do |key, value|
+      self[key]=value
+    end
+  end
+  
+  # see Hash#select
+  def select
+    result = []
+    each_pair do |key,value|
+      result << [key,value] if yield key,value
+    end
+    return result
+  end
+  
+  # see Hash#shift
+  def shift
+    result = super
+    result[0] = decode(result[0])
+    return result
+  end
+  
+  # see Hash#sort
+  # when called with a block, the keys passed to the block will be the original keys.
+  def sort
+    if block_given?
+      result = super {|kv1,kv2| yield( [decode(kv1[0]),kv1[1]], [decode(kv2[0]),kv2[1]] ) }
+    else
+      result = super
+    end
+    result.collect {|a| [a[0].decode, a[1]] }
+  end
+  
+  # see Hash#==
+  # comparison will use TofuKey comparison to retain the desired behavior.
+  def == obj
+    return false unless obj.is_a? Hash
+    obj.each_pair do |key, value|
+      return false unless (v = fetch( key ) {|k| Missing }).eql? value
+    end
+    return true
   end
 end # class TofuHash
