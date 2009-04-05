@@ -39,8 +39,8 @@
 #
 class TofuHash < Hash
     module Version
-      MAJOR = 0
-      MINOR = 1
+      MAJOR = 1
+      MINOR = 0
       REVISION = 0
       STRING = [MAJOR, MINOR, REVISION].join('.')
     end
@@ -233,11 +233,19 @@ class TofuHash < Hash
   
   # see Hash#select
   def select
-    result = []
-    each_pair do |key,value|
-      result << [key,value] if yield key,value
+    if RUBY_VERSION >= "1.9"
+      result = {}
+      each_pair do |key,value|
+        result[key]=value if yield(key,value)
+      end
+      return result
+    else
+      result = []
+      each_pair do |key,value|
+        result << [key,value] if yield key,value
+      end
+      return result
     end
-    return result
   end
   
   # see Hash#shift
@@ -250,6 +258,7 @@ class TofuHash < Hash
   # see Hash#sort
   # when called with a block, the keys passed to the block will be the original keys.
   def sort
+    return super if RUBY_VERSION >= "1.9"
     if block_given?
       result = super {|kv1,kv2| yield( [decode(kv1[0]),kv1[1]], [decode(kv2[0]),kv2[1]] ) }
     else
@@ -266,5 +275,66 @@ class TofuHash < Hash
       return false unless (v = fetch( key ) {|k| Missing }).eql? value
     end
     return true
+  end
+  
+  # see Hash#merge
+  def merge( other_hash, &block )
+    self.dup.merge!(other_hash, &block)
+  end
+  
+  #see Hash#merge!
+  # see Hash#update
+  def merge!( other_hash )
+    other_hash.each_pair do |key,value|
+      if block_given? then
+        if self.has_key? key then
+          self[key] = yield( key, self[key], value )
+        else
+          self[key] = value
+        end
+      else
+        self[key] = value
+      end
+    end
+    self
+  end
+  alias_method 'update', 'merge!'
+  
+  #see Hash#reject
+  def reject( &block )
+    self.dup.delete_if(&block)
+  end
+  
+  alias_method 'regular_reject!','reject!'
+  #see Hash#reject!
+  def reject!( &block )
+    self.regular_reject! do |key, value|
+      block.call( decode(key), value)
+    end
+  end
+  
+  #see Hash#to_hash
+  def to_hash
+    result = Hash.new
+    self.each_pair do |key, value|
+      result[key]=value
+    end
+    result
+  end
+  
+  #see Hash#to_s
+  def to_s
+    self.to_hash.to_s
+  end
+  
+  # see Hash#try_convert (ruby 1.9.x +)
+  def TofuHash.try_convert( obj )
+    h = super obj
+    return nil if h.nil?
+    result = TofuHash.new
+    h.each_pair do |key,value|
+      result[key] = value
+    end
+    return result
   end
 end # class TofuHash

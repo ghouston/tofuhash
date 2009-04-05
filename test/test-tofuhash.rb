@@ -1,6 +1,7 @@
 require 'tofuhash'
 require 'test/unit'
 require 'pp'
+require 'yaml'
 
 =begin
 test-tofuhash.rb
@@ -212,6 +213,11 @@ module TofuHashTesting
       assert_equal( h[b],2 )      #=> 2
     end
 
+    def test_ri_hash_square_bracket_code
+      assert_equal( TofuHash["a", 100, "b", 200], {"a"=>100, "b"=>200} )       #=> {"a"=>100, "b"=>200}
+      assert_equal( TofuHash["a" => 100, "b" => 200], {"a"=>100, "b"=>200} )    #=> {"a"=>100, "b"=>200}
+    end
+
     def test_ri_hash_new_code
       h = TofuHash.new("Go Fish")
       h["a"] = 100
@@ -229,46 +235,6 @@ module TofuHashTesting
       assert_equal( h["c"].upcase!, "GO FISH: C" )   #=> "GO FISH: C"
       assert_equal( h["d"], "Go Fish: d" )           #=> "Go Fish: d"
       assert_equal( h.keys, ["c","d"] )           #=> ["c", "d"]
-    end
-
-    def test_ri_hash_square_bracket_code
-      assert_equal( TofuHash["a", 100, "b", 200], {"a"=>100, "b"=>200} )       #=> {"a"=>100, "b"=>200}
-      assert_equal( TofuHash["a" => 100, "b" => 200], {"a"=>100, "b"=>200} )    #=> {"a"=>100, "b"=>200}
-    end
-
-    def test_to_a
-      hash = TofuHash["a" => 2, "b" => 1]
-      assert_equal [["a",2],["b",1]], hash.to_a
-    end
-
-    def test_ri_to_a
-      h = { "c" => 300, "a" => 100, "d" => 400, "c" => 300  }
-      result = h.to_a
-      sorted = h.to_a.sort { |a,b| a[0] <=> b[0] }
-      assert_equal( [['a',100],['c',300],['d',400]], sorted )
-    end
-    
-    def test_include?
-      hash =  TofuHash["a" => 2, "b" => 1]
-      assert( hash.include?( 'a' ))
-    end
-    
-    def test_ri_include?
-      h = { "a" => 100, "b" => 200 }
-      assert( h.has_key?("a") )
-      assert_equal( false, h.has_key?("z"))
-    end
-
-    def test_ri_delete_if
-      h =  TofuHash["a" => 100, "b" => 200,  "c" => 300]
-      h.delete_if { |key,value| key >= 'b' }
-      assert_equal TofuHash['a' => 100], h
-    end
-
-    def test_delete_unless
-      hash =  TofuHash["a" => 2, "b" => 1]
-      hash.delete_unless { |k,v| k == 'b' }
-      assert_equal TofuHash['b' => 1], hash
     end
 
     def test_ri_hash_equality
@@ -312,20 +278,6 @@ module TofuHashTesting
       h["D"] = 5
       h[:e] = 6
       h[:F] = 7
-      assert_equal( h, {"a"=>10, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
-      assert_equal( h, {:a=>10, "b"=>200, "c"=>4, "D"=>5, :e=>6, :F=>7} )
-    end
-    
-    def test_ri_store
-      h = TofuHash[ "a" => 100, "b" => 200 ]
-      h.store("a",9)
-      h.store("c",4)
-      
-      # tofu examples...
-      h.store(:a,10)
-      h.store("D",5)
-      h.store(:e,6)
-      h.store(:F,7)
       assert_equal( h, {"a"=>10, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
       assert_equal( h, {:a=>10, "b"=>200, "c"=>4, "D"=>5, :e=>6, :F=>7} )
     end
@@ -380,11 +332,27 @@ module TofuHashTesting
       assert_equal( h, { "b" => 200 } )
     end
 
+    def test_ri_delete_if
+      h =  TofuHash["a" => 100, "b" => 200,  "c" => 300]
+      h.delete_if { |key,value| key >= 'b' }
+      assert_equal TofuHash['a' => 100], h
+    end
+
+    def test_delete_unless
+      hash =  TofuHash["a" => 2, "b" => 1]
+      hash.delete_unless { |k,v| k == 'b' }
+      assert_equal TofuHash['b' => 1], hash
+    end
+
     def test_ri_each
       results = []
       h = TofuHash[ "a" => 100, "b" => 200 ]
       h.each {|key, value| results << "#{key} is #{value}" }
       assert_equal( ["a is 100", "b is 200"], results) 
+      
+      results = []
+      h.each {|x| results << x}
+      assert_equal( [["a", 100], ["b", 200]], results )
     end
     
     def test_ri_each_key
@@ -426,8 +394,14 @@ module TofuHashTesting
       #note, this will generate a warning "block supersedes default value argument"
       assert_equal( "go fish, z", h.fetch("z", 99) { |el| "go fish, #{el}"})
       $VERBOSE = old_VERBOSE
-      assert_raise IndexError do
-        h.fetch("z")
+      if RUBY_VERSION >= "1.9" then
+        assert_raise( KeyError ) do
+          h.fetch("z")
+        end
+      else
+        assert_raise( IndexError ) do
+          h.fetch("z")
+        end
       end
     end
     
@@ -447,6 +421,17 @@ module TofuHashTesting
       assert( h.include?( "A" ) )
       assert( h.include?( :A ) )
       assert( !h.include?( "z" ) )
+    end
+
+    def test_include?
+      hash =  TofuHash["a" => 2, "b" => 1]
+      assert( hash.include?( 'a' ))
+    end
+    
+    def test_ri_include?
+      h = { "a" => 100, "b" => 200 }
+      assert( h.has_key?("a") )
+      assert_equal( false, h.has_key?("z"))
     end
 
     def test_ri_key_question
@@ -480,9 +465,13 @@ module TofuHashTesting
     end
     
     def test_ri_index
+      old_VERBOSE = $VERBOSE
+      $VERBOSE = nil
+      # supress deprecated warning message (1.9)
       h = TofuHash[ "a" => 100, "b" => 200 ]
       assert_equal( "b", h.index( 200 ))
       assert_equal( nil, h.index( 999 ))
+      $VERBOSE = old_VERBOSE
     end
     
     def test_ri_replace
@@ -496,17 +485,19 @@ module TofuHashTesting
         assert_instance_of( TofuKey, key )
       end
     end
-    
-    def test_ri_select
-      h = TofuHash[ "a" => 100, "b" => 200, "c" => 300 ]
-      assert( [["b", 200], ["c", 300]], h.select {|k,v| k > "a"} )
-      assert( [["a", 100]], h.select {|k,v| v < 200} )
+
+    def test_ri_invert
+      h = TofuHash[ "n" => 100, "m" => 100, "y" => 300, "d" => 200, "a" => 0 ]
+      if RUBY_VERSION >= "1.9" then
+        assert_equal( h.invert, {0=>"a", 100=>"m", 200=>"d", 300=>"y"} )
+      else
+        assert_equal( h.invert, {0=>"a", 100=>"n", 200=>"d", 300=>"y"} )
+      end
     end
     
-    def test_ri_shift
-      h = TofuHash[ 1 => "a", 2 => "b", 3 => "c" ]
-      assert_equal( [1,"a"], h.shift )
-      assert_equal( h, {2 => "b", 3 => "c"} )
+    def test_ri_keys
+      h = { "a" => 100, "b" => 200, "c" => 300, "d" => 400 }
+      assert_equal( ["a", "b", "c", "d"], h.keys )
     end
     
     def test_ri_length_and_size
@@ -518,10 +509,200 @@ module TofuHashTesting
       assert_equal( 3, h.size )
     end
 
+    def test_ri_merge
+      h1 = TofuHash[ "a" => 100, "b" => 200 ]
+      h2 = { "b" => 254, "c" => 300 }
+      result = h1.merge(h2)
+      assert_equal( result, {"a"=>100, "b"=>254, "c"=>300} )
+      result.regular_each_pair do | key, value |
+        assert_instance_of( TofuKey, key )
+      end
+      assert_equal( h1, {"a"=>100, "b" => 200 })
+      
+      result = h1.merge(h2) do |key,old_val,new_val|
+        assert_equal( "b", key )
+        assert_equal( 200, old_val )
+        assert_equal( 254, new_val )
+        :happy
+      end
+      assert_equal( result, {"a"=>100, "b"=>:happy, "c"=>300} )
+      result.regular_each_pair do | key, value |
+        assert_instance_of( TofuKey, key )
+      end
+      assert_equal( h1, {"a"=>100, "b" => 200 })
+    end
+    
+    def test_ri_merge!
+      h1 = TofuHash[ "a" => 100, "b" => 200 ]
+      h2 = { "b" => 254, "c" => 300 }
+      result = h1.merge!(h2)
+      assert_equal( result, {"a"=>100, "b"=>254, "c"=>300} )
+      assert_equal( h1, result)
+    end
+    
+    def test_ri_update
+      h1 = TofuHash[ "a" => 100, "b" => 200 ]
+      h2 = { "b" => 254, "c" => 300 }
+      result = h1.update(h2)
+      assert_equal( result, {"a"=>100, "b"=>254, "c"=>300} )
+      assert_equal( h1, result)
+    end
+    
+    def test_ri_rehash
+      a = [ "a", "b" ]
+      c = [ "c", "d" ]
+      h = TofuHash[ a => 100, c => 300 ]
+      assert_equal( 100, h[a] )
+      a[0] = "z"
+      assert_equal( nil, h[a] )
+      assert_equal( h.rehash, {["z", "b"]=>100, ["c", "d"]=>300} )
+      assert_equal( 100, h[a] )
+    end
+    
+    def test_ri_reject
+      h =  TofuHash["a" => 100, "b" => 200,  "c" => 300]
+      result = h.reject { |key,value| key >= 'b' }
+      assert_equal TofuHash['a' => 100], result
+      assert_equal TofuHash["a" => 100, "b" => 200,  "c" => 300], h
+    end
+    
+    def test_ri_reject!
+      h =  TofuHash["a" => 100, "b" => 200,  "c" => 300]
+      result = h.reject! { |key,value| key >= 'b' }
+      assert_equal TofuHash['a' => 100], result
+      assert_equal TofuHash["a" => 100], h
+      
+      result = h.reject! { |key,value| key >= 'b' }
+      assert_equal nil, result
+      assert_equal TofuHash["a" => 100], h
+    end
+    
+    def test_ri_select
+      h = TofuHash[ "a" => 100, "b" => 200, "c" => 300 ]
+      if RUBY_VERSION < "1.9" then
+        assert_equal( [["b", 200], ["c", 300]], h.select {|k,v| k > "a"} )
+        assert_equal( [["a", 100]], h.select {|k,v| v < 200} )
+      else
+        assert_equal( {"b"=> 200,"c"=>300}, h.select {|k,v| k > "a"} )
+        assert_equal( {"a"=> 100}, h.select {|k,v| v < 200} )
+      end
+    end
+    
+    def test_ri_shift
+      h = TofuHash[ 1 => "a", 2 => "b", 3 => "c" ]
+      assert_equal( [1,"a"], h.shift )
+      assert_equal( h, {2 => "b", 3 => "c"} )
+    end
+    
     def test_ri_sort
       h = TofuHash[ "a" => 20, "b" => 30, "c" => 10  ]
       assert_equal( [["a", 20], ["b", 30], ["c", 10]], h.sort )
       assert_equal( [["c", 10], ["a", 20], ["b", 30]], h.sort {|a,b| a[1]<=>b[1]} )
     end
+
+    def test_ri_store
+      h = TofuHash[ "a" => 100, "b" => 200 ]
+      h.store("a",9)
+      h.store("c",4)
+      
+      # tofu examples...
+      h.store(:a,10)
+      h.store("D",5)
+      h.store(:e,6)
+      h.store(:F,7)
+      assert_equal( h, {"a"=>10, "b"=>200, "c"=>4, "d"=>5, "e"=>6, "f"=>7} )
+      assert_equal( h, {:a=>10, "b"=>200, "c"=>4, "D"=>5, :e=>6, :F=>7} )
+    end
+    
+    def test_to_a
+      hash = TofuHash["a" => 2, "b" => 1]
+      assert_equal [["a",2],["b",1]], hash.to_a
+    end
+
+    def test_ri_to_a
+      h = { "c" => 300, "a" => 100, "d" => 400, "c" => 300  }
+      result = h.to_a
+      sorted = h.to_a.sort { |a,b| a[0] <=> b[0] }
+      assert_equal( [['a',100],['c',300],['d',400]], sorted )
+    end
+    
+    def test_ri_to_hash
+      h = TofuHash["a" => 2, "b" => 1]
+      hash = h.to_hash
+      assert_same( Hash, hash.class )
+      assert_equal( {"a" => 2, "b" => 1}, hash )
+    end
+    
+    def test_ri_to_s
+      # note this was modified from 1.8.6 in expectation of 1.9 which should preserve insert order.
+      h = TofuHash[ "a" => 100, "c" => 300, "d" => 400 ]
+      if RUBY_VERSION < "1.9"
+        assert_equal( h.to_s, "a100c300d400" )
+      else
+        assert_equal( h.to_s, '{"a"=>100, "c"=>300, "d"=>400}' )
+      end
+    end
+    
+    def test_ri_to_yaml
+      h = TofuHash[ :a => 100, "c" => 300, "d" => 400 ]
+      serialized = h.to_yaml
+      new_obj = YAML::load(serialized)
+      assert_equal( h, new_obj )
+    end
+    
+    def test_ri_values
+        h = TofuHash[ "a" => 100, "b" => 200, "c" => 300 ]
+        assert_equal( [100, 200, 300], h.values )
+    end
+    
+    def test_ri_values_at
+      h = TofuHash[ "cat" => "feline", "dog" => "canine", "cow" => "bovine" ]
+      assert_equal( ["bovine", "feline"], h.values_at("cow", "cat"))
+      assert_equal( ["bovine", "feline"], h.values_at("Cow", "cAt"))
+      assert_equal( ["bovine", "feline"], h.values_at(:cow, :cAt))
+    end
+    
+    def test_compare_by_identity
+      return if RUBY_VERSION < "1.9"
+      # adapted from http://eigenclass.org/hiki.rb?Changes+in+Ruby+1.9#l85
+      h1 = TofuHash[ "a" => 100, "b" => 200, :c => "c" ]
+      assert_same(h1.compare_by_identity, h1)
+      assert( h1.compare_by_identity? )
+      assert_equal( nil, h1["a"] )        # => nil  # different objects.
+      assert_equal( nil, h1[:c] )         # => nil  # note Hash would return "c" since same symbols are all same.  But TofuHash duplicates the key (just like a string key in Hash).
+    end
+    
+    def test_try_convert
+      return if RUBY_VERSION < "1.9"
+      assert_equal( nil, TofuHash.try_convert( [:a,:b] ) )
+      result = TofuHash.try_convert( {:a => :b} )
+      assert_instance_of( TofuHash, result )
+      assert_equal( result, {:a=>:b} )
+    end
   end # class TestHash
+  
+  class TestTofuKey < Test::Unit::TestCase
+    def test_eql?
+      k = TofuKey.new :happy
+      assert_equal( k, :HAPPY )
+      
+      k = TofuKey.new 123
+      assert_equal( k, 123 )
+    end
+    
+    def test_compare
+      k = TofuKey.new :happy
+      assert_equal( 1, k <=> :Angry )
+      assert_equal( 1, k <=> "angRY" )
+      assert_equal( 0, k <=> :HAPPY )
+      assert_equal( 0, k <=> "Happy" )
+      assert_equal( -1, k <=> :Sad )
+      assert_equal( -1, k <=> "sad" )
+      
+      k = TofuKey.new 123
+      assert_equal( 1, k <=> 122 )
+      assert_equal( 0, k <=> 123 )
+      assert_equal( -1, k <=> 124 )
+    end
+  end
 end # module TofuHash

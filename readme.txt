@@ -15,13 +15,13 @@ for Example:
  puts h[:mixedCaseString]  #=> "string"
  puts h[11]                #=> "number"
 
-Version:: 0.1.0 A useful and well tested subset of Hash methods is available.
+Version:: 1.0.0 A well tested, complete version which support all Hash methods.
 
 Tested to work with:
 Ruby 1.8.6
 Ruby 1.9.1
 
-How is TofuHash differenct than Hash?
+How is TofuHash different than Hash?
 * TofuHash wraps the key into a TofuKey which is used internally inside TofuHash.
   The TofuKey defines new behavior for handling the key.  By
   default it will treat Symbol, String, and uppercase vs downcase as the same. This
@@ -29,6 +29,11 @@ How is TofuHash differenct than Hash?
   version of TofuKey.
 
 * TofuHash adds the method TofuHash#delete_unless
+
+* TofuHash.compare_by_identity (ruby 1.9 or later) is useless because TofuHash encodes the key into a TofyKey,
+therefore when compare_by_identity is used TofuHash will never match the given key.  This matches
+the behavior of Hash with strings for keys.  The string is cloned, so compare_by_identity is also
+useless for that situation.
 
 == Links:
 
@@ -84,6 +89,9 @@ Contributors:
 * Nacho Caballero (http://github.com/nachocab/)  added #to_a, #delete_if, #delete_unless, #include?
 
 == Release History:
+
+April 4 2009 - 1.0.0 release on rubyforge and git hub.  Completed testing the entire Hash interface!
+Added all missing or misbehaving methods from Hash.  Tested against both ruby 1.8.6 and 1.9.1.
 
 Feb 28 2009 - 0.1.0 release on rubyforge.  Added gem, rdoc, rcov output.
 Added TofuHash::Version module
